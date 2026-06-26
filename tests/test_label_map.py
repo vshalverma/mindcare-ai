@@ -54,3 +54,17 @@ def test_neutral_is_in_taxonomy(label_map: dict) -> None:
     # The chat engine falls back to "neutral" if the predicted emotion
     # isn't in the response table; removing it would break that fallback.
     assert "neutral" in label_map["emotions"]
+
+
+def test_label_map_carries_base_encoder_name(label_map: dict) -> None:
+    # `train.py` writes `base_encoder_name` so that a checkpoint without
+    # a sibling config.json (older saves, or copies across machines) can
+    # still be reconstructed. `chat_engine._Classifier.__init__` relies
+    # on this key for the fallback path; if it's missing the loader
+    # silently uses a hard-coded default and emits garbage predictions.
+    assert "base_encoder_name" in label_map, (
+        f"label_map.json is missing 'base_encoder_name'; "
+        f"keys present: {sorted(label_map.keys())}"
+    )
+    assert isinstance(label_map["base_encoder_name"], str)
+    assert label_map["base_encoder_name"], "base_encoder_name is empty"

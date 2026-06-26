@@ -198,7 +198,7 @@ class _Classifier:
         config_path = model_dir / "config.json"
         cache_dir = None  # not exposed; trust HF's default cache
         if not config_path.exists():
-            encoder_name = self.label_map.get("encoder_name", "distilbert-base-uncased")
+            encoder_name = _resolve_encoder_name(self.label_map)
             self.model = MultiTaskClassifier(
                 encoder_name=encoder_name,
                 num_emotions=len(self.emotions),
@@ -261,6 +261,20 @@ def _softmax(x: np.ndarray, axis: int = -1) -> np.ndarray:
     x = x - x.max(axis=axis, keepdims=True)
     e = np.exp(x)
     return e / e.sum(axis=axis, keepdims=True)
+
+
+def _resolve_encoder_name(label_map: dict) -> str:
+    """Pick the encoder name to instantiate the bare backbone from.
+
+    `train.py` writes `base_encoder_name` into ``label_map.json``. A legacy
+    key `encoder_name` is also accepted so older checkpoints still load.
+    If neither is present we fall back to ``distilbert-base-uncased``,
+    which is the encoder used for the committed baseline.
+    """
+    return label_map.get(
+        "base_encoder_name",
+        label_map.get("encoder_name", "distilbert-base-uncased"),
+    )
 
 
 # ---------------------------------------------------------------------------

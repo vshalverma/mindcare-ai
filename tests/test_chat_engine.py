@@ -116,3 +116,38 @@ def test_crisis_truth_table(
     reply = eng.reply(text)
     assert reply.crisis_flag is expected_flag
     assert reply.crisis_reason == expected_reason
+
+
+# ---------------------------------------------------------------------------
+# Loader fallback: when no config.json is present, _Classifier must use
+# `base_encoder_name` (the key `train.py` writes) — NOT the legacy key
+# `encoder_name`, and NOT a hard-coded default unless the label_map is
+# silent. This is the bug fix for a silent-mismatch hazard: the loader
+# used to read `encoder_name`, which the saved label_map never had, so
+# every fallback-path load would silently use distilbert-base-uncased
+# regardless of what backbone the weights were trained on.
+# ---------------------------------------------------------------------------
+
+def test_resolve_encoder_name_prefers_base_encoder_name() -> None:
+    from src.inference.chat_engine import _resolve_encoder_name
+
+    label_map = {
+        "base_encoder_name": "roberta-base",
+        "encoder_name": "bert-base-uncased",  # legacy key — must be ignored
+    }
+    assert _resolve_encoder_name(label_map) == "roberta-base"
+
+
+def test_resolve_encoder_name_falls_back_to_legacy_key() -> None:
+    # Older label_maps (pre-fix) used `encoder_name` directly. Still load.
+    from src.inference.chat_engine import _resolve_encoder_name
+
+    assert _resolve_encoder_name({"encoder_name": "bert-base-uncased"}) == "bert-base-uncased"
+
+
+def test_resolve_encoder_name_defaults_when_missing() -> None:
+    # No encoder key at all — loader still produces a usable name
+    # (matches the documented default).
+    from src.inference.chat_engine import _resolve_encoder_name
+
+    assert _resolve_encoder_name({}) == "distilbert-base-uncased"
