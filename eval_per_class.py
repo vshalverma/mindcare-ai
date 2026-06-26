@@ -29,7 +29,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.models.train import MultiTaskClassifier  # noqa: E402
+from src.inference.loader import load_classifier  # noqa: E402
 
 
 CONFIG_PATH = PROJECT_ROOT / "configs" / "training.yaml"
@@ -253,14 +253,10 @@ def main() -> int:
     print(f"[eval]   {int(y_crisis.sum()):,} rows have crisis_flag=True")
 
     print(f"[eval] loading model from {CKPT_DIR}")
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    from transformers import AutoTokenizer
-    tokenizer = AutoTokenizer.from_pretrained(str(CKPT_DIR))
-    model = MultiTaskClassifier(encoder_name=str(CKPT_DIR), num_emotions=len(emotion_to_id))
-    from safetensors.torch import load_file
-    state_dict_file = CKPT_DIR / "model.safetensors"
-    model.load_state_dict(load_file(str(state_dict_file)))
-    model.to(device).eval()
+    bundle = load_classifier(CKPT_DIR)
+    model = bundle.model
+    tokenizer = bundle.tokenizer
+    device = bundle.device
     print(f"[eval]   on device: {device}")
 
     print(f"[eval] running inference on {len(df):,} rows")

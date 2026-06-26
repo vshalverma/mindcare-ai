@@ -18,7 +18,6 @@ predictable, and auditable (important for a safety-sensitive domain).
 
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -172,56 +171,23 @@ class ClassifierPrediction:
 class _Classifier:
     """Lazy wrapper around the trained MultiTaskClassifier.
 
-    Loads weights once on first use. The HF model directory lives at
-    ``<output_dir>/final`` per ``src.models.train``.
+    Loads weights once on first use via ``src.inference.loader``. The HF
+    model directory lives at ``<output_dir>/final`` per ``src.models.train``.
     """
 
     def __init__(self, model_dir: Path, device: str | None = None) -> None:
         self.model_dir = model_dir
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
 
-        # Local imports keep this module importable without torch installed
-        # (handy for unit tests that only exercise the keyword gate).
-        from transformers import AutoConfig, AutoModel, AutoTokenizer
-        from src.models.train import MultiTaskClassifier
+        # Lazy import keeps this module importable without torch / transformers
+        # installed (handy for unit tests that only exercise the keyword gate).
+        from src.inference.loader import load_classifier
 
-        self.tokenizer = AutoTokenizer.from_pretrained(str(model_dir))
-        self.label_map = json.loads(
-            (model_dir / "label_map.json").read_text(encoding="utf-8")
-        )
-        self.emotions = list(self.label_map["emotions"])
-
-        # Some older checkpoints (saved before train.py was fixed to copy
-        # config.json explicitly) don't have one next to the weights. Fall
-        # back to the base encoder name stored in the label map, or — last
-        # resort — to the distilbert-base-uncased default.
-        config_path = model_dir / "config.json"
-        cache_dir = None  # not exposed; trust HF's default cache
-        if not config_path.exists():
-            encoder_name = _resolve_encoder_name(self.label_map)
-            self.model = MultiTaskClassifier(
-                encoder_name=encoder_name,
-                num_emotions=len(self.emotions),
-                cache_dir=cache_dir,
-            )
-        else:
-            self.model = MultiTaskClassifier(
-                encoder_name=str(model_dir),
-                num_emotions=len(self.emotions),
-                cache_dir=cache_dir,
-            )
-        # Load weights saved by `trainer.save_model`. The Trainer dumps
-        # the full module (encoder + heads), so load_state_dict works.
-        state_dict_file = model_dir / "model.safetensors"
-        if state_dict_file.exists():
-            from safetensors.torch import load_file
-            self.model.load_state_dict(load_file(state_dict_file))
-        else:
-            bin_file = model_dir / "pytorch_model.bin"
-            self.model.load_state_dict(
-                torch.load(bin_file, map_location=self.device)
-            )
-        self.model.to(self.device).eval()
+        bundle = load_classifier(model_dir, device=device)
+        self.model = bundle.model
+        self.tokenizer = bundle.tokenizer
+        self.label_map = bundle.label_map
+        self.emotions = bundle.emotions
+        self.device = bundle.device
 
     @torch.inference_mode()
     def predict(self, texts: Sequence[str]) -> list[ClassifierPrediction]:
@@ -261,20 +227,6 @@ def _softmax(x: np.ndarray, axis: int = -1) -> np.ndarray:
     x = x - x.max(axis=axis, keepdims=True)
     e = np.exp(x)
     return e / e.sum(axis=axis, keepdims=True)
-
-
-def _resolve_encoder_name(label_map: dict) -> str:
-    """Pick the encoder name to instantiate the bare backbone from.
-
-    `train.py` writes `base_encoder_name` into ``label_map.json``. A legacy
-    key `encoder_name` is also accepted so older checkpoints still load.
-    If neither is present we fall back to ``distilbert-base-uncased``,
-    which is the encoder used for the committed baseline.
-    """
-    return label_map.get(
-        "base_encoder_name",
-        label_map.get("encoder_name", "distilbert-base-uncased"),
-    )
 
 
 # ---------------------------------------------------------------------------
