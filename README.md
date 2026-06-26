@@ -55,6 +55,28 @@ Re-generate the data-quality report only:
 python -m src.data_pipeline.run_pipeline --stage validate
 ```
 
+## Setup
+
+A working venv on a CUDA-capable box (the committed checkpoint was
+trained on a GTX 1650, 4 GB VRAM):
+
+```bash
+python -m venv venv
+# Linux/macOS:
+source venv/bin/activate
+# Windows (PowerShell):
+.\venv\Scripts\Activate.ps1
+
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+On Linux without a GPU use the CPU-only torch wheel:
+
+```bash
+pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
+```
+
 ## Training
 
 ```bash
@@ -64,9 +86,10 @@ venv/Scripts/python -m src.models.train --config configs/training.yaml
 The YAML config controls everything: encoder, batch size, max length,
 learning rate, mixed precision, train/eval sample caps.
 
-First-run config trains for 1 epoch on 20,000 stratified samples
-(~25 min on a GTX 1650). To use the full ~248k rows, set
-`max_train_samples: 0`.
+The committed config trains for 1 epoch on the full ~248k rows
+(`max_train_samples: 0`) — that takes ~19 h on a GTX 1650 and produces
+the checkpoint in `models/checkpoints/final/`. For a quick sanity-check
+run, set `max_train_samples: 20000` (~25 min on the same box).
 
 ## Chat UI
 
@@ -75,6 +98,21 @@ venv/Scripts/python -m streamlit run src/app/streamlit_app.py
 ```
 
 Opens at `http://localhost:8501`.
+
+## Tests & CI
+
+The pytest suite is the safety net for regressions. 60 tests run on
+CPU in ~2 seconds (the chat engine tests use a stub classifier, so no
+checkpoint or GPU is needed):
+
+```bash
+python -m pytest tests/ -q
+```
+
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs the same
+command on every push and PR against `master`. It targets Python 3.14
+to match the dev box, and uses the CPU-only torch wheel so install
+time stays low (~30 s with pip cache warm).
 
 ## Safety notes
 

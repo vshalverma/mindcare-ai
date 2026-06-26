@@ -1,0 +1,58 @@
+# mindcare-ai — CI
+#
+# Runs the pytest suite on every push and PR against master.
+# The 60 tests are GPU-free (a stub classifier stands in for the real
+# model), so we use the CPU-only torch wheel to keep install time and
+# disk usage down.
+
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+# Cancel a previous run on the same ref if a new commit lands —
+# protects against CI-quota burn when iterating on a PR.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      # pip cache keyed on requirements.txt — saves ~30s on warm runs.
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install CPU-only torch
+        # CPU index keeps the torch wheel small (~200 MB vs ~2 GB for CUDA).
+        # transformers pulls in safetensors / numpy / etc. transitively.
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            --extra-index-url https://download.pytorch.org/whl/cpu \
+            "torch>=2.1"
+
+      - name: Install project + test deps
+        run: python -m pip install -r requirements.txt
+
+      - name: Run pytest
+        # -q: terse output; --tb=short: short tracebacks (full for failures
+        # only); all errors visible at the bottom of the log.
+        run: python -m pytest tests/ -q --tb=short
