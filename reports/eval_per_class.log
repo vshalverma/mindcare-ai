@@ -1,0 +1,64 @@
+[eval] loading config from C:\Users\vishal\mindcare-ai\configs\training.yaml
+[eval] loading val parquet from C:\Users\vishal\mindcare-ai\data\processed\unified_val.parquet
+[eval]   31,389 rows
+[eval]   7,304 rows have a canonical emotion label
+[eval]   11,795 rows have crisis_flag=True
+[eval] loading model from C:\Users\vishal\mindcare-ai\models\checkpoints\final
+Loading weights: 0it [00:00, ?it/s]Loading weights: 0it [00:00, ?it/s]
+[transformers] [1mDistilBertModel LOAD REPORT[0m from: C:\Users\vishal\mindcare-ai\models\checkpoints\final
+Key                                                                   | Status     | 
+----------------------------------------------------------------------+------------+-
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.output_layer_norm.bias   | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.attention.v_lin.bias     | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.attention.v_lin.weight   | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.attention.q_lin.bias     | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.attention.k_lin.bias     | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.attention.out_lin.weight | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.sa_layer_norm.weight     | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.ffn.lin1.weight          | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.attention.k_lin.weight   | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.attention.out_lin.bias   | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.ffn.lin2.bias            | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.output_layer_norm.weight | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.attention.q_lin.weight   | UNEXPECTED | 
+emotion_head.bias                                                     | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.ffn.lin2.weight          | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.ffn.lin1.bias            | UNEXPECTED | 
+encoder.embeddings.LayerNorm.bias                                     | UNEXPECTED | 
+crisis_head.weight                                                    | UNEXPECTED | 
+encoder.transformer.layer.{0, 1, 2, 3, 4, 5}.sa_layer_norm.bias       | UNEXPECTED | 
+encoder.embeddings.LayerNorm.weight                                   | UNEXPECTED | 
+encoder.embeddings.word_embeddings.weight                             | UNEXPECTED | 
+encoder.embeddings.position_embeddings.weight                         | UNEXPECTED | 
+crisis_head.bias                                                      | UNEXPECTED | 
+emotion_head.weight                                                   | UNEXPECTED | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.ffn.lin2.bias                    | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.attention.q_lin.weight           | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.attention.k_lin.bias             | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.sa_layer_norm.weight             | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.attention.v_lin.bias             | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.sa_layer_norm.bias               | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.attention.q_lin.bias             | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.output_layer_norm.bias           | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.ffn.lin2.weight                  | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.ffn.lin1.weight                  | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.attention.out_lin.weight         | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.attention.v_lin.weight           | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.output_layer_norm.weight         | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.attention.k_lin.weight           | MISSING    | 
+embeddings.LayerNorm.bias                                             | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.ffn.lin1.bias                    | MISSING    | 
+embeddings.position_embeddings.weight                                 | MISSING    | 
+transformer.layer.{0, 1, 2, 3, 4, 5}.attention.out_lin.bias           | MISSING    | 
+embeddings.word_embeddings.weight                                     | MISSING    | 
+embeddings.LayerNorm.weight                                           | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[eval]   on device: cuda
+[eval] running inference on 31,389 rows
+[eval] wrote C:\Users\vishal\mindcare-ai\reports\eval_per_class.md
+
+[eval] crisis head  acc=0.976  prec=0.962  rec=0.974  f1=0.968
+[eval] emotion head acc=0.634  macro_f1=0.511

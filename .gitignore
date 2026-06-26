@@ -1,0 +1,36 @@
+# --- Data (large; recreate via the data pipeline) ---
+data/raw/
+data/processed/
+
+# --- HuggingFace encoder cache (large; auto-downloaded on first use) ---
+models/encoder/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- IDE ---
+.idea/
+.vscode/
+
+# --- Virtual envs / secrets ---
+venv/
+.env
+
+# --- Intermediate training checkpoints (only final/ is tracked) ---
+# Keep models/checkpoints/final/ committed so a fresh clone can run the demo.
+models/checkpoints/*
+!models/checkpoints/final/
+
+# --- Streamlit ---
+.streamlit/secrets.toml

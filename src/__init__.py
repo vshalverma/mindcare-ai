@@ -1,0 +1,1 @@
+"""mindcare-ai source package."""
