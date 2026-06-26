@@ -3,9 +3,10 @@
 Curated, lower-case substrings. Matching is done case-insensitively against
 the `text` column. All matches are stored in `crisis_source` for audit.
 
-IMPORTANT: This is a first-pass heuristic. It WILL produce false positives
-on negative constructions like "I don't want to die". A negation-aware
-refinement is planned for Phase 2.
+This is a first-pass heuristic and WILL produce false positives on
+negative constructions like "I don't want to die". The keyword gate
+is paired with the model's crisis head in `ChatEngine`, so the model
+should be the primary signal and the keyword list is a backstop.
 
 Sources cross-referenced:
   - Reddit r/SuicideWatch common phrasing
@@ -14,8 +15,11 @@ Sources cross-referenced:
 
 from __future__ import annotations
 
-# Direct expressions of self-harm / suicidal ideation.
-DIRECT_CRISIS_PATTERNS: tuple[str, ...] = (
+# All patterns combined. Direct (self-harm / suicidal ideation) and
+# indirect (high-signal but less specific) phrases are interleaved by
+# category for readability; matching is the same either way.
+ALL_PATTERNS: tuple[str, ...] = (
+    # Direct expressions of self-harm / suicidal ideation.
     "kill myself",
     "killing myself",
     "end my life",
@@ -48,10 +52,7 @@ DIRECT_CRISIS_PATTERNS: tuple[str, ...] = (
     "jump off",
     "hang myself",
     "shoot myself",
-)
-
-# Indirect but high-signal phrases.
-INDIRECT_CRISIS_PATTERNS: tuple[str, ...] = (
+    # Indirect but high-signal phrases.
     "i can't go on",
     "i cant go on",
     "i can't take it anymore",
@@ -67,6 +68,3 @@ INDIRECT_CRISIS_PATTERNS: tuple[str, ...] = (
     "i give up",
     "done with life",
 )
-
-# All patterns combined. Order is preserved for reporting the first match.
-ALL_PATTERNS: tuple[str, ...] = DIRECT_CRISIS_PATTERNS + INDIRECT_CRISIS_PATTERNS
