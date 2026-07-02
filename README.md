@@ -3,6 +3,30 @@
 A small, **self-contained** mental-health chatbot demo. Built to run on
 consumer hardware (trained and tested on a GTX 1650, 4 GB VRAM).
 
+## Results
+
+Single-epoch training on the full ~248k-row unified dataset, evaluated on
+the held-out validation set (`reports/eval_per_class.md`):
+
+| Head | Metric | Score |
+|---|---|---|
+| Crisis (binary, safety-critical) | F1 | **96.8%** |
+| Crisis | Recall | **97.4%** |
+| Crisis | Precision | 96.2% |
+| Crisis | Accuracy | 97.6% |
+| Emotion (28-class, GoEmotions) | Macro F1 | 51.1% |
+| Emotion | Weighted F1 | 61.7% |
+| Emotion | Overall accuracy (scored rows) | 63.4% |
+
+The crisis head is the safety-critical one: 97.4% recall means a real
+distress message is almost never missed by the model. A second keyword
+safety gate in the chat engine catches high-risk phrases the classifier
+might miss, and the two fire in conservative-OR mode.
+
+The emotion head is intentionally multi-task with the crisis head — joint
+training produces a better encoder for both emotional-language
+understanding and risk classification than either task alone.
+
 ## What it does
 
 Given a user message, `mindcare-ai`:
