@@ -1,6 +1,6 @@
 # mindcare-ai — CI
 #
-# Runs the pytest suite on every push and PR against master.
+# Runs the pytest suite on every push and PR against main.
 # The 60 tests are GPU-free (a stub classifier stands in for the real
 # model), so we use the CPU-only torch wheel to keep install time and
 # disk usage down.
@@ -9,9 +9,9 @@ name: ci
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 
 # Cancel a previous run on the same ref if a new commit lands —
 # protects against CI-quota burn when iterating on a PR.
