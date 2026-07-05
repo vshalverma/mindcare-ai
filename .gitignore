@@ -27,10 +27,17 @@ Thumbs.db
 venv/
 .env
 
-# --- Intermediate training checkpoints (only final/ is tracked) ---
-# Keep models/checkpoints/final/ committed so a fresh clone can run the demo.
+# --- Trained model artifacts (mostly small + tracked; large weights are not) ---
+# models/checkpoints/final/ holds the trained model. We track the small
+# config/tokenizer/label-map/metrics files but NOT the large weight binaries.
+# To run the demo after a fresh clone, retrain (see README "Setup" / PROJECT_REPORT.md).
 models/checkpoints/*
 !models/checkpoints/final/
+!models/checkpoints/final/*.json
+!models/checkpoints/final/*.txt
+models/checkpoints/final/*.safetensors
+models/checkpoints/final/*.bin
+!models/checkpoints/final/training_args.bin
 
 # --- Streamlit ---
 .streamlit/secrets.toml
