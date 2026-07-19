@@ -117,6 +117,32 @@ def load_classifier(model_dir: Path | str, device: str | None = None) -> LoadedC
             f"model.safetensors and pytorch_model.bin"
         )
 
+    # A safetensors file that is just an LFS pointer stub (a few hundred
+    # bytes of text starting with "version https://git-lfs.github.com")
+    # is not real weights — opening it raises "header too large". Detect
+    # this case explicitly so callers get a clear "weights not committed"
+    # diagnostic instead of a confusing safetensors error from deep inside
+    # the library.
+    def _is_lfs_pointer(path: Path) -> bool:
+        try:
+            head = path.read_bytes()[:200]
+            return b"git-lfs.github.com" in head
+        except OSError:
+            return False
+
+    weights_present = False
+    if safetensors_path.exists() and not _is_lfs_pointer(safetensors_path):
+        weights_present = True
+    if bin_path.exists():
+        weights_present = True
+    if not weights_present:
+        raise FileNotFoundError(
+            f"Weights in {model_dir} are LFS pointer stubs — the real "
+            f"weight file was not committed. Re-run training with "
+            f"`python -m src.models.train --config configs/training.yaml` "
+            f"to regenerate it."
+        )
+
     label_map = json.loads(label_map_path.read_text(encoding="utf-8"))
 
     # Local imports: keep this module cheap to import so unit tests that
@@ -137,7 +163,7 @@ def load_classifier(model_dir: Path | str, device: str | None = None) -> LoadedC
     # on top.
     config_path = model_dir / "config.json"
     if config_path.exists():
-        encoder_name = str(model_dir)
+        encoder_name = _resolve_encoder_name(label_map)
     else:
         encoder_name = _resolve_encoder_name(label_map)
 
@@ -153,7 +179,14 @@ def load_classifier(model_dir: Path | str, device: str | None = None) -> LoadedC
     # is actually present.)
     if safetensors_path.exists():
         from safetensors.torch import load_file
-        state_dict = load_file(str(safetensors_path))
+        # `device="cpu"` is intentional: load_file defaults to the current
+        # CUDA device if one exists, which fails with "header too large"
+        # for safetensors files that were saved on CPU (the header bytes
+        # don't match the device-endianness the runtime expects). We
+        # always stage on CPU and move the model to its target device
+        # below — `state_dict` is just a dict of tensors, the transfer
+        # is handled by `model.to(device)`.
+        state_dict = load_file(str(safetensors_path), device="cpu")
     else:
         # `map_location` here just decides where the tensors end up
         # initially — we move to the target device below.

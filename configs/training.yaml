@@ -1,72 +1,57 @@
-# mindcare-ai — training config
-# Kept small for GTX 1650 (4 GB VRAM).
-
 model:
-  # Small but reliable; ~66M params. Fits in 4 GB with fp16 + bs=16.
-  # (prajjwal1/bert-mini is smaller but its tokenizer requires sentencepiece
-  #  which isn't available in this env.)
-  name: "distilbert-base-uncased"
+  name: distilbert-base-uncased
   max_length: 96
-  cache_dir: "models/encoder"
-
+  cache_dir: models/encoder
 training:
-  # Multi-task: emotion (28-way) + crisis (binary)
-  output_dir: "models/checkpoints"
+  output_dir: models/checkpoints
   num_train_epochs: 1
   per_device_train_batch_size: 16
   per_device_eval_batch_size: 32
-  learning_rate: 5.0e-5
+  learning_rate: 5.0e-05
   weight_decay: 0.01
   warmup_ratio: 0.06
-  fp16: true                # mixed precision; needs CUDA
-  eval_every_steps: 999999  # skip mid-training evals on the full run; final eval fires at end
+  fp16: true
+  eval_every_steps: 999999
   save_every_epochs: 1
   seed: 42
-  max_train_samples: 0      # 0 = use the full ~248k rows
-  max_eval_samples: 4000    # cap eval set for speed (final eval only)
+  max_train_samples: 20000
+  max_eval_samples: 4000
   gradient_accumulation_steps: 1
   dataloader_num_workers: 0
-
 data:
-  processed_dir: "data/processed"
-  train_file: "unified_train.parquet"
-  val_file: "unified_val.parquet"
-  test_file: "unified_test.parquet"
-
-# 28-class emotion taxonomy (GoEmotions' 28 simplified labels).
-# EmpatheticDialogues' 32 labels are mapped in via the alias table below.
+  processed_dir: data/processed
+  train_file: unified_train.parquet
+  val_file: unified_val.parquet
+  test_file: unified_test.parquet
 emotions:
-  - admiration
-  - amusement
-  - anger
-  - annoyance
-  - approval
-  - caring
-  - confusion
-  - curiosity
-  - desire
-  - disappointment
-  - disapproval
-  - disgust
-  - embarrassment
-  - excitement
-  - fear
-  - gratitude
-  - grief
-  - joy
-  - love
-  - nervousness
-  - optimism
-  - pride
-  - realization
-  - relief
-  - remorse
-  - sadness
-  - surprise
-  - neutral
-
-# Map EmpatheticDialogues labels (and any other stray tokens) onto the
-# 28-class taxonomy above so the classifier head stays compact.
+- admiration
+- amusement
+- anger
+- annoyance
+- approval
+- caring
+- confusion
+- curiosity
+- desire
+- disappointment
+- disapproval
+- disgust
+- embarrassment
+- excitement
+- fear
+- gratitude
+- grief
+- joy
+- love
+- nervousness
+- optimism
+- pride
+- realization
+- relief
+- remorse
+- sadness
+- surprise
+- neutral
 emotion_aliases:
   afraid: fear
   anxious: fear
