@@ -224,8 +224,16 @@ class MultiTaskClassifier(nn.Module):
         
         # Fallback mechanism: if loading from a checkpoint directory that is missing config.json,
         # try to look up the base model name from label_map if present, or rescue with the argument.
+        # `low_cpu_mem_usage=False` matters when `encoder_name` is a local
+        # checkpoint directory: newer transformers defaults to True, which
+        # instantiates the model on the `meta` device and then tries to copy
+        # state-dict tensors into it (which fails with "Cannot copy out of
+        # meta tensor"). Disabling it forces a normal CPU materialization,
+        # which is safe for our small encoder.
         try:
-            self.encoder = AutoModel.from_pretrained(encoder_name, cache_dir=cache_dir)
+            self.encoder = AutoModel.from_pretrained(
+                encoder_name, cache_dir=cache_dir, low_cpu_mem_usage=False
+            )
         except Exception:
             # Check if encoder_name looks like a directory path containing a label_map
             potential_map_path = Path(encoder_name) / "label_map.json"
@@ -236,7 +244,9 @@ class MultiTaskClassifier(nn.Module):
                     fallback_name = labels.get("base_encoder_name", "distilbert-base-uncased")
                     print(f"[Warning] Failed to instantiate checkpoint from '{encoder_name}'. "
                           f"Falling back to base encoder model: '{fallback_name}'")
-                    self.encoder = AutoModel.from_pretrained(fallback_name, cache_dir=cache_dir)
+                    self.encoder = AutoModel.from_pretrained(
+                        fallback_name, cache_dir=cache_dir, low_cpu_mem_usage=False
+                    )
                 except Exception:
                     # Reraise original fallback if parsing completely fails
                     raise
